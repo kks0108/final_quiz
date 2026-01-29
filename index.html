@@ -41,15 +41,15 @@
         /* 分數變化時的卡片彈跳與發光 (增強版) */
         @keyframes score-bump {
             0% { transform: scale(1); }
-            40% { transform: scale(1.4); filter: brightness(1.2); box-shadow: 0 0 25px rgba(255,255,255,0.9); }
+            40% { transform: scale(1.2); filter: brightness(1.2); box-shadow: 0 0 30px rgba(255,255,255,0.8); }
             100% { transform: scale(1); }
         }
 
         /* 加減分數字的浮動淡出動畫 (增強版) */
         @keyframes float-out-up {
-            0% { opacity: 0; transform: translateY(30px) scale(0.5); }
-            20% { opacity: 1; transform: translateY(0px) scale(1.2); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1); }
+            0% { opacity: 0; transform: translate(-50%, 20px) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(1); }
         }
         
         /* --- 應用動畫類別 --- */
@@ -58,7 +58,7 @@
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-blob { animation: move-blob 10s infinite; }
         .animate-score-bump { animation: score-bump 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .animate-score-float { animation: float-out-up 0.8s ease-out forwards; }
+        .animate-score-float { animation: float-out-up 1s ease-out forwards; }
         
         /* --- 針對 iPad 投影優化：隱藏滾動條，鎖定畫面 --- */
         body, html {
@@ -479,29 +479,43 @@
           }
 
           // --- 記分板組件 (包含動畫邏輯) ---
-          const ScoreBoard = () => (
-              <div className="fixed top-4 right-4 z-50 flex gap-2">
-                  {HOUSES.map(house => {
-                      const anim = scoreAnimations[house.id];
-                      // 檢查動畫是否是最近觸發的 (例如 1秒內) 用於添加 CSS class
-                      // 這裡使用 key 來強制重繪觸發動畫
-                      return (
-                          <div key={house.id} className="relative">
-                              <div className={`${house.color} text-white px-3 py-1.5 rounded-lg shadow-md flex flex-col items-center min-w-[70px] transition-transform duration-200 ${anim && (Date.now() - anim.id < 500) ? 'animate-score-bump' : ''}`}>
-                                  <span className="text-xs font-bold opacity-90">{house.name}</span>
-                                  <span className="text-xl font-black">{scores[house.id]}</span>
-                              </div>
-                              {/* 浮動數字動畫 */}
-                              {anim && (
-                                  <div key={anim.id} className={`absolute top-full left-0 right-0 text-center font-black text-3xl animate-score-float pointer-events-none text-stroke z-50 ${anim.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                      {anim.amount > 0 ? `+${anim.amount}` : anim.amount}
-                                  </div>
-                              )}
+          const ScoreBoard = () => {
+              const renderCard = (houseId) => {
+                  const house = HOUSES.find(h => h.id === houseId);
+                  const anim = scoreAnimations[house.id];
+                  
+                  return (
+                      <div key={house.id} className="relative">
+                          <div className={`${house.color} text-white w-36 py-4 rounded-2xl shadow-xl flex flex-col items-center border-4 border-white/30 transition-transform duration-200 ${anim && (Date.now() - anim.id < 500) ? 'animate-score-bump' : ''}`}>
+                              <span className="text-xl font-bold opacity-90 mb-1">{house.name}</span>
+                              <span className="text-5xl font-black">{scores[house.id]}</span>
                           </div>
-                      );
-                  })}
-              </div>
-          );
+                           {/* 浮動數字動畫 */}
+                           {anim && (
+                                <div key={anim.id} className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center font-black text-5xl animate-score-float pointer-events-none text-stroke z-50 ${anim.amount > 0 ? 'text-green-400' : 'text-red-500'}`} style={{ textShadow: '2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff' }}>
+                                    {anim.amount > 0 ? `+${anim.amount}` : anim.amount}
+                                </div>
+                            )}
+                      </div>
+                  );
+              };
+
+              return (
+                  <>
+                    {/* Left Side: Green, Blue */}
+                    <div className="fixed left-6 top-32 z-40 flex flex-col gap-6">
+                        {renderCard('green')}
+                        {renderCard('blue')}
+                    </div>
+                    
+                    {/* Right Side: Yellow, Red */}
+                    <div className="fixed right-6 top-32 z-40 flex flex-col gap-6">
+                        {renderCard('yellow')}
+                        {renderCard('red')}
+                    </div>
+                  </>
+              );
+          };
 
           // -------------------------------------------------------------------------
           // RENDER
@@ -523,7 +537,7 @@
                   <p className="text-xl text-gray-500 font-light tracking-[0.2em] uppercase">Inter-House Quiz Competition</p>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl px-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-3xl px-4">
                   <button 
                     onClick={goToRound1Menu}
                     className="group relative h-80 bright-card bright-card-hover transition-all duration-500 overflow-hidden flex flex-col items-center justify-center"
@@ -572,7 +586,7 @@
                   <h1 className="text-5xl font-extrabold mb-3 tracking-wider text-orange-600 drop-shadow-sm">第一回合 — 必答題</h1>
                   <h2 className="text-xl font-light tracking-widest text-gray-500">請選擇題庫組別</h2>
                 </header>
-                <div className="grid grid-cols-2 gap-8 w-full max-w-4xl">
+                <div className="grid grid-cols-2 gap-8 w-full max-w-3xl">
                   {['A', 'B', 'C', 'D'].map((set) => (
                     <button key={set} onClick={() => startRound1Set(set)} className="group relative h-40 bright-card bright-card-hover flex items-center justify-center overflow-hidden transition-all duration-300">
                       <div className="text-7xl font-black text-gray-300 group-hover:text-orange-400 transition-colors text-shadow-sm">{set}</div>
@@ -646,13 +660,13 @@
                       <span className="text-lg font-bold text-orange-500 leading-tight">{viewMode === 'ROUND_2_GAME' ? '第二回合 搶答' : `第一回合 Set ${currentSet}`}</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 mr-24"> {/* mr-24 to avoid scoreboard overlap */}
+                <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 mr-24"> 
                   <BookOpen size={18} className="text-gray-400" /><span className="text-lg font-mono font-bold tracking-widest text-gray-700">{questionIndex + 1} <span className="text-gray-400 text-xs">/ {totalQuestions}</span></span>
                 </div>
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                <div className="w-full h-full max-w-5xl bright-card overflow-hidden relative z-0 flex flex-col animate-fade-in-up">
+                <div className="w-full h-full max-w-3xl bright-card overflow-hidden relative z-0 flex flex-col animate-fade-in-up">
                   <div className="bg-gradient-to-r from-gray-50 to-white p-4 md:p-6 border-b border-gray-100 flex-grow flex flex-col items-center justify-center relative">
                     <div className="w-full flex justify-center mb-4 flex-wrap gap-2">
                         <div className="inline-flex items-center space-x-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm transform hover:scale-105 transition-transform">
